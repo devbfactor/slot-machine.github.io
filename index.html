@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slot Machine</title>
+    <style>
+        .slot-machine {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .slot-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 400px;
+        }
+
+        .reel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 50px;
+            width: 100px;
+            height: 250px;
+            border: 1px solid #ccc;
+            overflow: hidden;
+        }
+
+        .number {
+            font-size: 40px;
+            font-weight: bold;
+            margin: 15px 0;
+            text-align: center;
+            transform: translateY(-60px);
+            transition: transform 2s ease-in-out;
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .spin-button {
+            cursor: pointer;
+            padding: 15px 100px;
+        }
+
+        .results {
+            border: 2px solid black;
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slot-machine">
+        <div class="slot-display">
+            <div class="reel">
+                <div class="number">1</div>
+                <div class="number">2</div>
+                <div class="number">3</div>
+                <div class="number">4</div>
+                <div class="number">5</div>
+                <div class="number">6</div>
+                <div class="number">7</div>
+                <div class="number">8</div>
+                <div class="number">9</div>
+            </div>
+            <div class="reel">
+                <div class="number">1</div>
+                <div class="number">2</div>
+                <div class="number">3</div>
+                <div class="number">4</div>
+                <div class="number">5</div>
+                <div class="number">6</div>
+                <div class="number">7</div>
+                <div class="number">8</div>
+                <div class="number">9</div>
+            </div>
+            <div class="reel">
+                <div class="number">1</div>
+                <div class="number">2</div>
+                <div class="number">3</div>
+                <div class="number">4</div>
+                <div class="number">5</div>
+                <div class="number">6</div>
+                <div class="number">7</div>
+                <div class="number">8</div>
+                <div class="number">9</div>
+            </div>
+        </div>
+        <div class="panel">
+            <button class="spin-button">Spin</button>
+            <div class="results">
+                <p id="result0"></p>
+                <p id="result1"></p>
+                <p id="result2"></p>
+            </div>
+
+        </div>
+    </div>
+    <script src="https://cdn.ethers.io/scripts/ethers-v4.min.js" charset="utf-8" type="text/javascript">
+    </script>
+    <script>
+        const reels = document.querySelectorAll('.reel');
+        const spinButton = document.querySelector('.spin-button');
+        spinButton.addEventListener('click', spinReels);
+
+            function spinReels() {
+                // Disable the spin button while the reels are spinning
+                spinButton.disabled = true;
+
+                // Rotate each reel randomly
+                reels.forEach(reel => {
+                    // Get the numbers on the reel and a random index to stop at
+                    const numbers = reel.querySelectorAll('.number');
+                    const randomIndex = Math.floor(Math.random() * 9);
+                    const stopOffset = randomIndex * -75;
+
+                    // Animate the numbers rotating to the stop index
+                    let offset = 0;
+                    let spinInterval = setInterval(() => {
+                        numbers.forEach(number => {
+                            number.style.transform = `translateY(${offset}px)`;
+                        });
+                        offset -= 75;
+
+                        // Stop the reel once it reaches the stop index
+                        if (offset <= stopOffset) {
+                            clearInterval(spinInterval);
+                            reel.dataset.stopOffset = stopOffset;
+                            checkWin();
+                        }
+                    }, 50);
+                });
+            }
+
+            async function checkWin() {
+                // Check if all reels have stopped spinning
+                const spinningReels = Array.from(reels).filter(reel => !reel.dataset.stopOffset);
+                if (spinningReels.length > 0) {
+                    return;
+                }
+
+                // Check if all reels have the same number at the stop index
+                const result = Array.from(reels).map(reel => {
+                    const numbers = reel.querySelectorAll('.number');
+                    const stopOffset = parseInt(reel.dataset.stopOffset);
+                    const stopIndex = -stopOffset / 75;
+                    return numbers[stopIndex].textContent;
+                });
+
+                async function displayResult() {
+                    if (result[0] === result[1] && result[1] === result[2]) {
+                        alert(`Congratulations! You won with ${result[0]} | ${result[1]} | ${result[2]}!`);
+                    } else {
+                        const resultElement0 = await document.getElementById('result0');
+                        resultElement0.innerHTML = result[0];
+                        const resultElement1 = await document.getElementById('result1');
+                        resultElement1.innerHTML = result[1];
+                        const resultElement2 = await document.getElementById('result2');
+                        resultElement2.innerHTML = result[2];
+                    }                  
+                } setTimeout(displayResult, 3000);
+
+                async function resetGame() {   
+                    reels.forEach(reel => {
+                        const numbers = reel.querySelectorAll('.number');
+                        numbers.forEach(number => {
+                            number.style.transform = 'translateY(0)';
+                        });
+                        reel.dataset.stopOffset = 0;
+                    });                
+                    spinButton.disabled = false;
+                } setTimeout(resetGame, 5000);
+
+                
+            }
+
+        const contractAddress = "0x6Fc7aB242fbDAa6673C7814fD7f3210610FDbfB8";
+        const contractABI = [{
+                "inputs": [
+                    {
+                        "internalType": "uint64",
+                        "name": "subscriptionId",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "minBet",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "have",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "want",
+                        "type": "address"
+                    }
+                ],
+                "name": "OnlyCoordinatorCanFulfill",
+                "type": "error"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "jackpotWinner",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "reward",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "JackpotWinner",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "winner",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "reward",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Niner",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "requestId",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "slot1",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "slot2",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "slot3",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "RequestFulfilled",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "requestId",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint32",
+                        "name": "numWords",
+                        "type": "uint32"
+                    }
+                ],
+                "name": "RequestSent",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "winner",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "reward",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Short",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "from",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "WithdrawTransaction",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "from",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "minimumBetTransaction",
+                "type": "event"
+            },
+            {
+                "inputs": [],
+                "name": "_minimumBet",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_address",
+                        "type": "address"
+                    }
+                ],
+                "name": "balanceOf",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "deposit",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_requestId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getRequestStatus",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "fulfilled",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "lastRequestId",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "minimumBet",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "requestId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256[]",
+                        "name": "randomWords",
+                        "type": "uint256[]"
+                    }
+                ],
+                "name": "rawFulfillRandomWords",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "s_requests",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "fulfilled",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "exists",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "slot1",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "slot2",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "slot3",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "spin",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "withdraw",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ]
+        let contract;
+        let signer;
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        provider.send("eth_requestAccounts", []).then(() => {
+            provider.listAccounts().then((accounts) => {
+                signer = provider.getSigner(accounts[0]);
+                contract = new ethers.Contract(
+                    contractAddress,
+                    contractABI,
+                    signer
+                );
+            });
+        });
+
+    </script>
+</body>
+
+</html>
