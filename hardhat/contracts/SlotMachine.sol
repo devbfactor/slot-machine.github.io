@@ -44,7 +44,7 @@ contract SlotMachine is VRFConsumerBaseV2 {
     uint32 numWords = 3;
 
     address private _owner;
-    uint256 public _minimumBet;
+    uint256 public _minimumBet = 10000000000000000;
 
     uint256 public slot1;
     uint256 public slot2;
@@ -103,10 +103,10 @@ contract SlotMachine is VRFConsumerBaseV2 {
         emit RequestFulfilled(_requestId, slot1, slot2, slot3);
     }
 
-    function spin() public payable {
+    function spin(uint256 amount_) public {
         require(address(this).balance > 0, "Not enough prize money");
-        require(msg.value >= _minimumBet, "Not enough balance for entry fee");
-        uint256 amount = msg.value;
+        require(amount_ >= _minimumBet, "Not enough balance for entry fee");
+        uint256 amount = amount_;
         balances[address(this)] += amount;
         emit minimumBetTransaction(msg.sender, _owner, amount);
         requestRandomWords();

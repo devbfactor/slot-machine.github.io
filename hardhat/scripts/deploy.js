@@ -5,7 +5,7 @@ const VRF_SUBSCRIPTION_ID = process.env.VRF_SUBSCRIPTION_ID;
 
 const main = async () => {
   const Contract = await hre.ethers.getContractFactory("SlotMachine");
-  const deployedContract = await Contract.deploy(VRF_SUBSCRIPTION_ID, 1);
+  const deployedContract = await Contract.deploy(VRF_SUBSCRIPTION_ID);
 
   await deployedContract.deployed();
 
