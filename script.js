@@ -417,7 +417,7 @@ const symbols = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 let spinInterval;
         
 async function spin() {
-    const msgValue = 1000000000000000;
+    const msgValue = 100000000000000; //0.0001
     const startSpin = contract.spin({ value: msgValue });
     await startSpin;
     let i = Math.floor(Math.random(0 % 9) + 1);
