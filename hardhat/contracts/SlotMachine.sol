@@ -5,11 +5,6 @@ import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
 contract SlotMachine is VRFConsumerBaseV2 {
-    modifier onlyOwner() {
-        require(_owner == msg.sender, "Only the owner can call this function");
-        _;
-    }
-
     event RequestSent(uint256 requestId, uint32 numWords);
     event RequestFulfilled(
         uint256 requestId,
@@ -37,6 +32,7 @@ contract SlotMachine is VRFConsumerBaseV2 {
     uint64 s_subscriptionId;
 
     uint256[] private requestIds;
+    // uint256 public lastRequestId;
     bytes32 keyHash =
         0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f;
     uint32 callbackGasLimit = 2500000;
@@ -44,11 +40,16 @@ contract SlotMachine is VRFConsumerBaseV2 {
     uint32 numWords = 3;
 
     address private _owner;
-    uint256 public _minimumBet = 10000000000000000;
+    uint256 public _minimumBet; // 100000000000000
 
     uint256 public slot1;
     uint256 public slot2;
     uint256 public slot3;
+
+    modifier onlyOwner() {
+        require(_owner == msg.sender, "Only the owner can call this function");
+        _;
+    }
 
     constructor(
         uint64 subscriptionId,
@@ -103,10 +104,10 @@ contract SlotMachine is VRFConsumerBaseV2 {
         emit RequestFulfilled(_requestId, slot1, slot2, slot3);
     }
 
-    function spin(uint256 amount_) public {
+    function spin() public payable {
         require(address(this).balance > 0, "Not enough prize money");
-        require(amount_ >= _minimumBet, "Not enough balance for entry fee");
-        uint256 amount = amount_;
+        require(msg.value >= _minimumBet, "Not enough balance for entry fee");
+        uint256 amount = msg.value;
         balances[address(this)] += amount;
         emit minimumBetTransaction(msg.sender, _owner, amount);
         requestRandomWords();
